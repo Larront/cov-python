@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+from map_builders import SimpleMapBuilder
 import tcod
+import copy
 
 from engine import Engine
-from entity import Entity
-from game_map import GameMap
-from input_handlers import EventHandler
+import entity_factories
 
 
 def main():
@@ -14,21 +14,25 @@ def main():
     map_width = 80
     map_height = 45
 
+    max_monsters_room = 2
+
     tileset = tcod.tileset.load_tilesheet(
         "resources/dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD)
 
-    event_handler = EventHandler()
+    player = copy.deepcopy(entity_factories.player)
+    engine = Engine(player=player)
 
-    player = Entity(screen_width // 2, screen_height //
-                    2, "@", (255, 255, 255))
-    npc = Entity(int(screen_width / 2 - 5),
-                 int(screen_height / 2), "@", (255, 255, 0))
-    entities = {npc, player}
+    builder = SimpleMapBuilder(max_rooms=30,
+                               room_min_size=6,
+                               room_max_size=10,
+                               map_width=map_width,
+                               map_height=map_height,
+                               max_monsters_room=max_monsters_room,
+                               engine=engine,
+                               )
 
-    game_map = GameMap(map_width, map_height)
-
-    engine = Engine(entities=entities,
-                    event_handler=event_handler, game_map=game_map, player=player)
+    engine.game_map = builder.build()
+    engine.update_fov()
 
     with tcod.context.new_terminal(
         screen_width,
@@ -42,9 +46,7 @@ def main():
         while True:
             engine.render(console=root_console, context=context)
 
-            events = tcod.event.wait()
-
-            engine.handle_events(events)
+            engine.event_handler.handle_events()
 
 
 if __name__ == "__main__":

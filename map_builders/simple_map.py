@@ -1,24 +1,26 @@
 from typing import List, TYPE_CHECKING
 
 from map_builders.map_builder import MapBuilder
-from map_builders.common import RectangularRoom, tunnel_between
+from map_builders.common import RectangularRoom, tunnel_between, place_entities
 
 from game_map import GameMap
 import tile_types
 import random
 
-if TYPE_CHECKING:
-    from entity import Entity
+from entity import Entity
+from engine import Engine
 
 
 class SimpleMapBuilder(MapBuilder):
-    def __init__(self, max_rooms: int, room_min_size: int, room_max_size: int, map_width: int, map_height: int):
+    def __init__(self, max_rooms: int, room_min_size: int, room_max_size: int, map_width: int, map_height: int, max_monsters_room: int, engine: Engine):
         super().__init__(
-            max_rooms, room_min_size, room_max_size, map_width, map_height)
+            max_rooms, room_min_size, room_max_size, map_width, map_height, max_monsters_room, engine)
 
     def build(self) -> GameMap:
         """Generate a new dungeon map."""
-        dungeon = GameMap(self.map_width, self.map_height)
+        player = self.engine.player
+        dungeon = GameMap(self.engine, self.map_width, self.map_height,
+                          entities=[player])
 
         rooms: List[RectangularRoom] = []
 
@@ -43,11 +45,13 @@ class SimpleMapBuilder(MapBuilder):
 
             if len(rooms) == 0:
                 # The first room, where the player starts.
-                self.player_spawn = new_room.center
+                player.place(*new_room.center, dungeon)
             else:  # All rooms after the first.
                 # Dig out a tunnel between this room and the previous one.
                 for x, y in tunnel_between(rooms[-1].center, new_room.center):
                     dungeon.tiles[x, y] = tile_types.floor
+
+            place_entities(new_room, dungeon, self.max_monsters_room)
 
             # Finally, append the new room to the list.
             rooms.append(new_room)
