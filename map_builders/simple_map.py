@@ -1,4 +1,4 @@
-from typing import List, TYPE_CHECKING
+from typing import List
 
 from map_builders.map_builder import MapBuilder
 from map_builders.common import RectangularRoom, tunnel_between, place_entities
@@ -7,7 +7,6 @@ from game_map import GameMap
 import tile_types
 import random
 
-from entity import Entity
 from engine import Engine
 
 
