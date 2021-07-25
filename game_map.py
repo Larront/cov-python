@@ -24,7 +24,7 @@ class GameMap:
             (width, height), fill_value=tile_types.wall, order="F")
 
         self.visible = np.full((width, height), fill_value=False, order="F")
-        self.explored = np.full((width, height), fill_value=False, order="F")
+        self.explored = np.full((width, height), fill_value=True, order="F")
 
     @property
     def actors(self) -> Iterator[Actor]:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from map_builders import BSPMapBuilder
+from map_builders import BSPMapBuilder, BSPInteriorMapBuilder
 from random import random
 from map_builders import SimpleMapBuilder
 import tcod
@@ -25,14 +25,14 @@ def main():
     player = copy.deepcopy(entity_factories.player)
     engine = Engine(player=player)
 
-    builder = BSPMapBuilder(max_rooms=30,
-                            room_min_size=6,
-                            room_max_size=10,
-                            map_width=map_width,
-                            map_height=map_height,
-                            max_monsters_room=max_monsters_room,
-                            engine=engine,
-                            )
+    builder = BSPInteriorMapBuilder(max_rooms=30,
+                                    room_min_size=6,
+                                    room_max_size=10,
+                                    map_width=map_width,
+                                    map_height=map_height,
+                                    max_monsters_room=max_monsters_room,
+                                    engine=engine,
+                                    )
 
     engine.game_map = builder.build()
     engine.update_fov()
