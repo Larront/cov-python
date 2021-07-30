@@ -12,7 +12,7 @@ from engine import Engine
 
 
 class BSPInteriorMapBuilder(MapBuilder):
-    def __init__(self, max_rooms: int, room_min_size: int, room_max_size: int, map_width: int, map_height: int, max_monsters_room: int, engine: Engine):
+    def __init__(self, max_rooms: int, room_min_size: int, room_max_size: int, map_width: int, map_height: int, max_monsters_room: int, max_items_room: int, engine: Engine):
         super().__init__(
             max_rooms, room_min_size, room_max_size, map_width, map_height, max_monsters_room, engine)
 

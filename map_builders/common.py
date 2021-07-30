@@ -55,8 +55,9 @@ def tunnel_between(
         yield x, y
 
 
-def place_entities(room: RectangularRoom, dungeon: GameMap, maximum_monsters: int) -> None:
+def place_entities(room: RectangularRoom, dungeon: GameMap, maximum_monsters: int, maximum_items: int) -> None:
     number_monsters = random.randint(0, maximum_monsters)
+    number_of_items = random.randint(0, maximum_items)
 
     for i in range(number_monsters):
         x = random.randint(room.x1 + 1, room.x2 - 1)
@@ -67,3 +68,10 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, maximum_monsters: in
                 entity_factories.goblin.spawn(dungeon, x, y)
             else:
                 entity_factories.orc.spawn(dungeon, x, y)
+
+    for i in range(number_of_items):
+        x = random.randint(room.x1 + 1, room.x2 - 1)
+        y = random.randint(room.y1 + 1, room.y2 - 1)
+
+        if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
+            entity_factories.health_potion.spawn(dungeon, x, y)
