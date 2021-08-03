@@ -4,12 +4,7 @@ from typing import Callable, Optional, Tuple, TYPE_CHECKING
 import tcod.event
 
 import actions
-from actions import (
-    Action,
-    BumpAction,
-    PickupAction,
-    WaitAction
-)
+from actions import Action, BumpAction, PickupAction, WaitAction
 import color
 import exceptions
 
@@ -326,8 +321,7 @@ class HistoryViewer(EventHandler):
                 self.cursor = 0
             else:
                 # Otherwise move while staying clamped to the bounds of the history log.
-                self.cursor = max(
-                    0, min(self.cursor + adjust, self.log_length - 1))
+                self.cursor = max(0, min(self.cursor + adjust, self.log_length - 1))
         elif event.sym == tcod.event.K_HOME:
             self.cursor = 0  # Move directly to the top message.
         elif event.sym == tcod.event.K_END:
@@ -394,8 +388,7 @@ class InventoryEventHandler(AskUserEventHandler):
             try:
                 selected_item = player.inventory.items[index]
             except IndexError:
-                self.engine.message_log.add_message(
-                    "Invalid entry.", color.invalid)
+                self.engine.message_log.add_message("Invalid entry.", color.invalid)
                 return None
             return self.on_item_selected(selected_item)
         return super().ev_keydown(event)

@@ -11,22 +11,38 @@ from engine import Engine
 
 
 class SimpleMapBuilder(MapBuilder):
-    def __init__(self, max_rooms: int, room_min_size: int, room_max_size: int, map_width: int, map_height: int, max_monsters_room: int, engine: Engine):
+    def __init__(
+        self,
+        max_rooms: int,
+        room_min_size: int,
+        room_max_size: int,
+        map_width: int,
+        map_height: int,
+        max_monsters_room: int,
+        engine: Engine,
+    ):
         super().__init__(
-            max_rooms, room_min_size, room_max_size, map_width, map_height, max_monsters_room, engine)
+            max_rooms,
+            room_min_size,
+            room_max_size,
+            map_width,
+            map_height,
+            max_monsters_room,
+            engine,
+        )
 
     def build(self) -> GameMap:
         """Generate a new dungeon map."""
         player = self.engine.player
-        dungeon = GameMap(self.engine, self.map_width, self.map_height,
-                          entities=[player])
+        dungeon = GameMap(
+            self.engine, self.map_width, self.map_height, entities=[player]
+        )
 
         rooms: List[RectangularRoom] = []
 
         for r in range(self.max_rooms):
             room_width = random.randint(self.room_min_size, self.room_max_size)
-            room_height = random.randint(
-                self.room_min_size, self.room_max_size)
+            room_height = random.randint(self.room_min_size, self.room_max_size)
 
             x = random.randint(0, dungeon.width - room_width - 1)
             y = random.randint(0, dungeon.height - room_height - 1)

@@ -25,6 +25,14 @@ class RectangularRoom:
         """Return the inner area of this room as a 2D array index."""
         return slice(self.x1 + 1, self.x2), slice(self.y1 + 1, self.y2)
 
+    @property
+    def cells(self):
+        return [
+            (x, y)
+            for x in range(self.x1 + 1, self.x2)
+            for y in range(self.y1 + 1, self.y2)
+        ]
+
     def intersects(self, other: RectangularRoom) -> bool:
         """Return True if this room overlaps with another RectangularRoom."""
         return (
@@ -55,13 +63,14 @@ def tunnel_between(
         yield x, y
 
 
-def place_entities(room: RectangularRoom, dungeon: GameMap, maximum_monsters: int, maximum_items: int) -> None:
+def place_entities(
+    room, dungeon: GameMap, maximum_monsters: int, maximum_items: int
+) -> None:
     number_monsters = random.randint(0, maximum_monsters)
     number_of_items = random.randint(0, maximum_items)
 
-    for i in range(number_monsters):
-        x = random.randint(room.x1 + 1, room.x2 - 1)
-        y = random.randint(room.y1 + 1, room.y2 - 2)
+    for _i in range(number_monsters):
+        x, y = random.choice(room)
 
         if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
             if random.random() < 0.8:
@@ -69,9 +78,8 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, maximum_monsters: in
             else:
                 entity_factories.orc.spawn(dungeon, x, y)
 
-    for i in range(number_of_items):
-        x = random.randint(room.x1 + 1, room.x2 - 1)
-        y = random.randint(room.y1 + 1, room.y2 - 1)
+    for _i in range(number_of_items):
+        x, y = random.choice(room)
 
         if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
             item_chance = random.random()

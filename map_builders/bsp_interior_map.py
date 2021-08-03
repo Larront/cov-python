@@ -12,15 +12,33 @@ from engine import Engine
 
 
 class BSPInteriorMapBuilder(MapBuilder):
-    def __init__(self, max_rooms: int, room_min_size: int, room_max_size: int, map_width: int, map_height: int, max_monsters_room: int, max_items_room: int, engine: Engine):
+    def __init__(
+        self,
+        max_rooms: int,
+        room_min_size: int,
+        room_max_size: int,
+        map_width: int,
+        map_height: int,
+        max_monsters_room: int,
+        max_items_room: int,
+        engine: Engine,
+    ):
         super().__init__(
-            max_rooms, room_min_size, room_max_size, map_width, map_height, max_monsters_room, engine)
+            max_rooms,
+            room_min_size,
+            room_max_size,
+            map_width,
+            map_height,
+            max_monsters_room,
+            engine,
+        )
 
     def build(self) -> GameMap:
         """Generate a new dungeon map."""
         player = self.engine.player
-        dungeon = GameMap(self.engine, self.map_width, self.map_height,
-                          entities=[player])
+        dungeon = GameMap(
+            self.engine, self.map_width, self.map_height, entities=[player]
+        )
 
         rooms: List[RectangularRoom] = []
 
@@ -40,15 +58,12 @@ class BSPInteriorMapBuilder(MapBuilder):
                 for x, y in tunnel_between(node_center(node1), node_center(node2)):
                     dungeon.tiles[x, y] = tile_types.floor
 
-                dungeon.tiles[node_center(node1)] = tile_types.center
-                dungeon.tiles[node_center(node2)] = tile_types.center
-
             else:
                 room = self.build_room(node)
                 rooms.append(room)
                 dungeon.tiles[room.inner] = tile_types.floor
 
-                place_entities(room, dungeon, self.max_monsters_room)
+                place_entities(room.cells, dungeon, self.max_monsters_room)
 
         player.place(*rooms[0].center, dungeon)
 
