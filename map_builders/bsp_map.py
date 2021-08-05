@@ -70,6 +70,10 @@ class BSPMapBuilder(MapBuilder):
 
         player.place(*rooms[0].center, dungeon)
 
+        center_of_last = rooms[-1].center
+        dungeon.tiles[center_of_last] = tile_types.down_stairs
+        dungeon.downstairs = center_of_last
+
         return dungeon
 
     def build_room(self, node: Bsp) -> RectangularRoom:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+from game_map import GameWorld
 import lzma
 import pickle
 import traceback
@@ -13,7 +14,6 @@ import color
 from engine import Engine
 import entity_factories
 import input_handlers
-from map_builders import BSPMapBuilder, BSPInteriorMapBuilder, CellularMapBuilder
 from random import random
 
 # Load the background image and remove the alpha channel.
@@ -31,7 +31,7 @@ def new_game() -> Engine:
     player = copy.deepcopy(entity_factories.player)
     engine = Engine(player=player)
 
-    builder = CellularMapBuilder(
+    engine.game_world = GameWorld(
         max_rooms=30,
         room_min_size=6,
         room_max_size=10,
@@ -42,7 +42,7 @@ def new_game() -> Engine:
         engine=engine,
     )
 
-    engine.game_map = builder.build()
+    engine.game_world.generate_floor()
     engine.update_fov()
 
     engine.message_log.add_message(
