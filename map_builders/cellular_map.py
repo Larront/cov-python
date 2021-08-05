@@ -89,4 +89,20 @@ class CellularMapBuilder(MapBuilder):
             ):
                 dungeon.tiles[x, y] = tile_types.floor
 
+        cells = [
+            (x, y)
+            for x in range(0, self.map_width - 1)
+            for y in range(0, self.map_height - 1)
+            if dungeon.tiles[x, y] == tile_types.floor
+        ]
+
+        place_entities(
+            cells,
+            dungeon,
+            self.max_monsters_room * 25,
+            self.max_items_room * 25,
+        )
+
+        player.place(int(r[0]), int(c[0]), dungeon)
+
         return dungeon
