@@ -1,9 +1,12 @@
 from __future__ import annotations
-from game_map import GameMap
 from typing import Iterator, Tuple
-import random
 import tcod
+from scipy import spatial
+import numpy as np
+
 import entity_factories
+from game_map import GameMap
+import tile_types
 
 
 class RectangularRoom:
@@ -61,6 +64,52 @@ def tunnel_between(
         yield x, y
     for x, y in tcod.los.bresenham((corner_x, corner_y), (x2, y2)).tolist():
         yield x, y
+
+
+def generate_voronoi_regions(dungeon: GameMap):
+    cells = [
+        (x, y)
+        for x in range(0, dungeon.width - 1)
+        for y in range(0, dungeon.height - 1)
+    ]
+    points = []
+
+    # Randomly generate a list of points
+    for i in range(0, dungeon.engine.rng.integers(20, 30)):
+        points.append(dungeon.engine.rng.choice(cells))
+
+    # Each point has a list of pixels
+    point_pixels = []
+    for i in range(len(points)):
+        point_pixels.append([])
+
+    # Build a search tree
+    tree = spatial.KDTree(points)
+
+    # build a list of pixed coordinates to query
+    pixel_coordinates = np.zeros((dungeon.height * dungeon.width, 2))
+    i = 0
+    for pixel_y_coordinate in range(dungeon.height):
+        for pixel_x_coordinate in range(dungeon.width):
+            pixel_coordinates[i] = np.array([pixel_x_coordinate, pixel_y_coordinate])
+            i = i + 1
+
+    # for each pixel within bounds, determine which point it is closest to and add it to the corresponding list in point_pixels
+    [distances, indices] = tree.query(pixel_coordinates)
+
+    i = 0
+    for pixel_y_coordinate in range(dungeon.height):
+        for pixel_x_coordinate in range(dungeon.width):
+            if (
+                dungeon.tiles[pixel_x_coordinate, pixel_y_coordinate]
+                == tile_types.floor
+            ):
+                point_pixels[indices[i]].append(
+                    (pixel_x_coordinate, pixel_y_coordinate)
+                )
+                i = i + 1
+
+    return point_pixels
 
 
 def place_entities(

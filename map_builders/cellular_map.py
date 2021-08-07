@@ -1,16 +1,11 @@
-from typing import List
-from scipy.ndimage.measurements import label
-
-from tcod.event import wait
 import tcod
+import numpy as np
 
 from map_builders.map_builder import MapBuilder
-from map_builders.common import RectangularRoom, tunnel_between, place_entities
+from map_builders.common import place_entities, generate_voronoi_regions
 
 from game_map import GameMap
 import tile_types
-import numpy as np
-from scipy import ndimage
 
 from engine import Engine
 
@@ -95,18 +90,15 @@ class CellularMapBuilder(MapBuilder):
         dungeon.tiles[exit_tile[0]] = tile_types.down_stairs
         dungeon.downstairs = exit_tile[0]
 
-        cells = [
-            (x, y)
-            for x in range(0, self.map_width - 1)
-            for y in range(0, self.map_height - 1)
-            if dungeon.tiles[x, y] == tile_types.floor
-        ]
+        regions = generate_voronoi_regions(dungeon)
 
-        place_entities(
-            cells,
-            dungeon,
-            self.max_monsters_room * 35,
-            self.max_items_room * 35,
-        )
+        for region in regions:
+            if len(region) > 0:
+                place_entities(
+                    region,
+                    dungeon,
+                    self.max_monsters_room + 3,
+                    self.max_items_room,
+                )
 
         return dungeon
