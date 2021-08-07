@@ -51,12 +51,18 @@ class GameWorld:
             BSPMapBuilder,
             BSPInteriorMapBuilder,
             CellularMapBuilder,
+            EvilCellularMapBuilder,
             SimpleMapBuilder,
         )
 
         self.current_floor += 1
 
-        builders = (BSPMapBuilder, BSPInteriorMapBuilder, CellularMapBuilder)
+        builders = (
+            BSPMapBuilder,
+            BSPInteriorMapBuilder,
+            CellularMapBuilder,
+            EvilCellularMapBuilder,
+        )
         choice = random.choice(builders)
         builder = choice(
             max_rooms=self.max_rooms,

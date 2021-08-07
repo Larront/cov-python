@@ -2,7 +2,6 @@ from typing import List
 from scipy.ndimage.measurements import label
 
 from tcod.event import wait
-import tcod
 
 from map_builders.map_builder import MapBuilder
 from map_builders.common import RectangularRoom, tunnel_between, place_entities
@@ -15,7 +14,7 @@ from scipy import ndimage
 from engine import Engine
 
 
-class CellularMapBuilder(MapBuilder):
+class EvilCellularMapBuilder(MapBuilder):
     def __init__(
         self,
         max_rooms: int,
@@ -50,8 +49,13 @@ class CellularMapBuilder(MapBuilder):
         dungeon.tiles = np.random.choice(
             [tile_types.wall, tile_types.floor],
             size=(self.map_width, self.map_height),
-            p=[0.55, 0.45],
+            p=[0.6, 0.4],
         )
+
+        for y in range(0, self.map_height):
+            for x in range(0, self.map_width):
+                if x < 2 or x > self.map_width - 3 or y < 2 or y > self.map_height - 3:
+                    dungeon.tiles[x, y] = tile_types.wall
 
         for i in range(0, 10):
             new_tiles = dungeon.tiles.copy()
@@ -66,36 +70,24 @@ class CellularMapBuilder(MapBuilder):
                         new_tiles[x, y] = tile_types.floor
             dungeon.tiles = new_tiles.copy()
 
-        for y in range(0, self.map_height):
-            for x in range(0, self.map_width):
-                if x < 1 or x > self.map_width - 2 or y < 1 or y > self.map_height - 2:
+        for y in range(0, self.map_height - 1):
+            for x in range(0, self.map_width - 1):
+                if x < 2 or x > self.map_width - 3 or y < 2 or y > self.map_height - 3:
                     dungeon.tiles[x, y] = tile_types.wall
 
-        player.place(int(self.map_width / 2), int(self.map_height / 2), dungeon)
-        while dungeon.tiles[player.x, player.y] == tile_types.wall:
-            player.place(player.x - 1, player.y, dungeon)
+        self.cleanup(dungeon, 1)
 
-        cost = np.where(dungeon.tiles == tile_types.floor, 1, 0)
+        bool = dungeon.tiles == tile_types.floor
 
-        dist = tcod.path.maxarray((self.map_width, self.map_height), dtype=np.int32)
-        dist[player.x, player.y] = 0
+        # Find and connect each blob
+        labels, nlabels = ndimage.label(bool)
+        r, c = np.vstack(ndimage.center_of_mass(bool, labels, np.arange(nlabels) + 1)).T
 
-        tcod.path.dijkstra2d(dist, cost, 1, None, out=dist)
-        exit_tile = ((0, 0), 0.0)
-
-        for y in range(0, self.map_height):
-            for x in range(0, self.map_width):
-                if dungeon.tiles[x, y] == tile_types.floor:
-                    dist_to_start = dist[x, y]
-
-                    if dist_to_start == np.iinfo(np.int32).max:
-                        dungeon.tiles[x, y] = tile_types.wall
-                    else:
-                        if dist_to_start > exit_tile[1]:
-                            exit_tile = ((x, y), dist_to_start)
-
-        dungeon.tiles[exit_tile[0]] = tile_types.down_stairs
-        dungeon.downstairs = exit_tile[0]
+        for i in range(1, len(r)):
+            for x, y in tunnel_between(
+                [int(r[i]), int(c[i])], [int(r[i - 1]), int(c[i - 1])]
+            ):
+                dungeon.tiles[x, y] = tile_types.floor
 
         cells = [
             (x, y)
@@ -107,8 +99,10 @@ class CellularMapBuilder(MapBuilder):
         place_entities(
             cells,
             dungeon,
-            self.max_monsters_room * 35,
-            self.max_items_room * 35,
+            self.max_monsters_room * 25,
+            self.max_items_room * 25,
         )
+
+        player.place(int(r[0]), int(c[0]), dungeon)
 
         return dungeon
