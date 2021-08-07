@@ -3,10 +3,10 @@ import numpy as np
 
 from map_builders.map_builder import MapBuilder
 from map_builders.common import (
+    exit_from_dijk,
     place_entities,
     generate_voronoi_regions,
     generate_dijkstra_map,
-    exit_from_dijk,
 )
 
 from game_map import GameMap
@@ -15,7 +15,7 @@ import tile_types
 from engine import Engine
 
 
-class CellularMapBuilder(MapBuilder):
+class DrunkenMapBuilder(MapBuilder):
     def __init__(
         self,
         max_rooms: int,
@@ -45,39 +45,14 @@ class CellularMapBuilder(MapBuilder):
             self.engine, self.map_width, self.map_height, entities=[player]
         )
 
-        dungeon.tiles = self.engine.rng.choice(
-            [tile_types.wall, tile_types.floor],
-            size=(self.map_width, self.map_height),
-            p=[0.55, 0.45],
-        )
-
-        for i in range(0, 10):
-            new_tiles = dungeon.tiles.copy()
-
-            for y in range(1, self.map_height - 1):
-                for x in range(1, self.map_width - 1):
-                    neighbors = self.getAdjacentWalls(x, y, dungeon)
-
-                    if neighbors > 4 or neighbors == 0:
-                        new_tiles[x, y] = tile_types.wall
-                    else:
-                        new_tiles[x, y] = tile_types.floor
-            dungeon.tiles = new_tiles.copy()
-
-        for y in range(0, self.map_height):
-            for x in range(0, self.map_width):
-                if x < 1 or x > self.map_width - 2 or y < 1 or y > self.map_height - 2:
-                    dungeon.tiles[x, y] = tile_types.wall
-
         player.place(int(self.map_width / 2), int(self.map_height / 2), dungeon)
-        while dungeon.tiles[player.x, player.y] == tile_types.wall:
-            player.place(player.x - 1, player.y, dungeon)
 
         dijk_map = generate_dijkstra_map(dungeon, player.x, player.y)
         exit_tile = exit_from_dijk(dungeon, dijk_map, cull_unreachable=True)
 
         dungeon.tiles[exit_tile] = tile_types.down_stairs
         dungeon.downstairs = exit_tile
+
         regions = generate_voronoi_regions(dungeon)
 
         for region in regions:

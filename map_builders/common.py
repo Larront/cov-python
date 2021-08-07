@@ -112,6 +112,35 @@ def generate_voronoi_regions(dungeon: GameMap):
     return point_pixels
 
 
+def generate_dijkstra_map(dungeon: GameMap, point: Tuple[int, int]):
+    cost = np.where(dungeon.tiles == tile_types.floor, 1, 0)
+
+    dist = tcod.path.maxarray((dungeon.width, dungeon.height), dtype=np.int32)
+    dist[point] = 0
+
+    tcod.path.dijkstra2d(dist, cost, 1, None, out=dist)
+
+    return dist
+
+
+def exit_from_dijk(dungeon: GameMap, dijk_map, cull_unreachable=False):
+    exit_tile = ((0, 0), 0.0)
+
+    for y in range(0, dungeon.height):
+        for x in range(0, dungeon.width):
+            if dungeon.tiles[x, y] == tile_types.floor:
+                dist_to_start = dijk_map[x, y]
+
+                if dist_to_start == np.iinfo(np.int32).max:
+                    if cull_unreachable:
+                        dungeon.tiles[x, y] = tile_types.wall
+                else:
+                    if dist_to_start > exit_tile[1]:
+                        exit_tile = ((x, y), dist_to_start)
+
+    return exit_tile[0]
+
+
 def place_entities(
     room, dungeon: GameMap, maximum_monsters: int, maximum_items: int
 ) -> None:
