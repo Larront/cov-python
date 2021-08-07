@@ -44,12 +44,12 @@ class RectangularRoom:
 
 
 def tunnel_between(
-    start: Tuple[int, int], end: Tuple[int, int]
+    start: Tuple[int, int], end: Tuple[int, int], dungeon: GameMap
 ) -> Iterator[Tuple[int, int]]:
     """Return an L-shaped tunnel between these two points."""
     x1, y1 = start
     x2, y2 = end
-    if random.random() < 0.5:  # 50% chance.
+    if dungeon.engine.rng.random() < 0.5:  # 50% chance.
         # Move horizontally, then vertically.
         corner_x, corner_y = x2, y1
     else:
@@ -66,23 +66,23 @@ def tunnel_between(
 def place_entities(
     room, dungeon: GameMap, maximum_monsters: int, maximum_items: int
 ) -> None:
-    number_monsters = random.randint(0, maximum_monsters)
-    number_of_items = random.randint(0, maximum_items)
+    number_monsters = dungeon.engine.rng.integers(0, maximum_monsters)
+    number_of_items = dungeon.engine.rng.integers(0, maximum_items)
 
     for _i in range(number_monsters):
-        x, y = random.choice(room)
+        x, y = dungeon.engine.rng.choice(room)
 
         if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
-            if random.random() < 0.8:
+            if dungeon.engine.rng.random() < 0.8:
                 entity_factories.goblin.spawn(dungeon, x, y)
             else:
                 entity_factories.orc.spawn(dungeon, x, y)
 
     for _i in range(number_of_items):
-        x, y = random.choice(room)
+        x, y = dungeon.engine.rng.choice(room)
 
         if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
-            item_chance = random.random()
+            item_chance = dungeon.engine.rng.random()
 
             if item_chance < 0.7:
                 entity_factories.health_potion.spawn(dungeon, x, y)

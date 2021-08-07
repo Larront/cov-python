@@ -63,7 +63,7 @@ class GameWorld:
             CellularMapBuilder,
             EvilCellularMapBuilder,
         )
-        choice = random.choice(builders)
+        choice = self.engine.rng.choice(builders)
         builder = choice(
             max_rooms=self.max_rooms,
             room_min_size=self.room_min_size,

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from tcod.context import Context
 from tcod.console import Console
 from tcod.map import compute_fov
+from numpy import random
 
 import exceptions
 from message_log import MessageLog
@@ -21,10 +22,12 @@ class Engine:
     game_map: GameMap
     game_world: GameWorld
 
-    def __init__(self, player: Actor):
+    def __init__(self, player: Actor, seed=None):
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.player = player
+        self.seed = seed
+        self.rng = random.default_rng(seed=seed)
 
     def handle_enemy_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:

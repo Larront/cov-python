@@ -43,11 +43,13 @@ class SimpleMapBuilder(MapBuilder):
         rooms: List[RectangularRoom] = []
 
         for r in range(self.max_rooms):
-            room_width = random.randint(self.room_min_size, self.room_max_size)
-            room_height = random.randint(self.room_min_size, self.room_max_size)
+            room_width = self.engine.rng.randint(self.room_min_size, self.room_max_size)
+            room_height = self.engine.rng.randint(
+                self.room_min_size, self.room_max_size
+            )
 
-            x = random.randint(0, dungeon.width - room_width - 1)
-            y = random.randint(0, dungeon.height - room_height - 1)
+            x = self.engine.rng.randint(0, dungeon.width - room_width - 1)
+            y = self.engine.rng.randint(0, dungeon.height - room_height - 1)
 
             # "RectangularRoom" class makes rectangles easier to work with
             new_room = RectangularRoom(x, y, room_width, room_height)

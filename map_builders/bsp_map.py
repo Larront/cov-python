@@ -50,13 +50,16 @@ class BSPMapBuilder(MapBuilder):
             min_height=self.room_min_size + 1,
             max_horizontal_ratio=1.5,
             max_vertical_ratio=1.5,
+            seed=self.engine.seed,
         )
 
         for node in bsp.pre_order():
             if node.children:
                 node1, node2 = node.children
 
-                for x, y in tunnel_between(node_center(node1), node_center(node2)):
+                for x, y in tunnel_between(
+                    node_center(node1), node_center(node2), dungeon
+                ):
                     dungeon.tiles[x, y] = tile_types.floor
 
             else:
@@ -77,11 +80,11 @@ class BSPMapBuilder(MapBuilder):
         return dungeon
 
     def build_room(self, node: Bsp) -> RectangularRoom:
-        room_width = random.randint(node.width // 2, node.width - 1)
-        room_height = random.randint(node.height // 2, node.height - 1)
+        room_width = self.engine.rng.integers(node.width // 2, node.width - 1)
+        room_height = self.engine.rng.integers(node.height // 2, node.height - 1)
 
-        x = random.randint(node.x, node.x + node.width - room_width - 1)
-        y = random.randint(node.y, node.y + node.height - room_height - 1)
+        x = self.engine.rng.integers(node.x, node.x + node.width - room_width - 1)
+        y = self.engine.rng.integers(node.y, node.y + node.height - room_height - 1)
 
         # "RectangularRoom" class makes rectangles easier to work with
         new_room = RectangularRoom(x, y, room_width, room_height)

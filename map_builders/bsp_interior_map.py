@@ -49,13 +49,16 @@ class BSPInteriorMapBuilder(MapBuilder):
             min_height=self.room_min_size + 1,
             max_horizontal_ratio=1.5,
             max_vertical_ratio=1.5,
+            seed=self.engine.seed,
         )
 
         for node in bsp.pre_order():
             if node.children:
                 node1, node2 = node.children
 
-                for x, y in tunnel_between(node_center(node1), node_center(node2)):
+                for x, y in tunnel_between(
+                    node_center(node1), node_center(node2), dungeon
+                ):
                     dungeon.tiles[x, y] = tile_types.floor
 
             else:

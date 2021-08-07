@@ -45,9 +45,7 @@ class CellularMapBuilder(MapBuilder):
             self.engine, self.map_width, self.map_height, entities=[player]
         )
 
-        rooms: List[RectangularRoom] = []
-
-        dungeon.tiles = np.random.choice(
+        dungeon.tiles = self.engine.rng.choice(
             [tile_types.wall, tile_types.floor],
             size=(self.map_width, self.map_height),
             p=[0.55, 0.45],

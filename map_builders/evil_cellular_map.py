@@ -46,7 +46,7 @@ class EvilCellularMapBuilder(MapBuilder):
 
         rooms: List[RectangularRoom] = []
 
-        dungeon.tiles = np.random.choice(
+        dungeon.tiles = self.engine.rng.choice(
             [tile_types.wall, tile_types.floor],
             size=(self.map_width, self.map_height),
             p=[0.6, 0.4],
@@ -85,7 +85,7 @@ class EvilCellularMapBuilder(MapBuilder):
 
         for i in range(1, len(r)):
             for x, y in tunnel_between(
-                [int(r[i]), int(c[i])], [int(r[i - 1]), int(c[i - 1])]
+                [int(r[i]), int(c[i])], [int(r[i - 1]), int(c[i - 1])], dungeon
             ):
                 dungeon.tiles[x, y] = tile_types.floor
 
