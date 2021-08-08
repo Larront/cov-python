@@ -73,7 +73,7 @@ class CellularMapBuilder(MapBuilder):
         while dungeon.tiles[player.x, player.y] == tile_types.wall:
             player.place(player.x - 1, player.y, dungeon)
 
-        dijk_map = generate_dijkstra_map(dungeon, player.x, player.y)
+        dijk_map = generate_dijkstra_map(dungeon, (player.x, player.y))
         exit_tile = exit_from_dijk(dungeon, dijk_map, cull_unreachable=True)
 
         dungeon.tiles[exit_tile] = tile_types.down_stairs

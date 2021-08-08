@@ -43,13 +43,15 @@ class SimpleMapBuilder(MapBuilder):
         rooms: List[RectangularRoom] = []
 
         for r in range(self.max_rooms):
-            room_width = self.engine.rng.randint(self.room_min_size, self.room_max_size)
-            room_height = self.engine.rng.randint(
+            room_width = self.engine.rng.integers(
+                self.room_min_size, self.room_max_size
+            )
+            room_height = self.engine.rng.integers(
                 self.room_min_size, self.room_max_size
             )
 
-            x = self.engine.rng.randint(0, dungeon.width - room_width - 1)
-            y = self.engine.rng.randint(0, dungeon.height - room_height - 1)
+            x = self.engine.rng.integers(0, dungeon.width - room_width - 1)
+            y = self.engine.rng.integers(0, dungeon.height - room_height - 1)
 
             # "RectangularRoom" class makes rectangles easier to work with
             new_room = RectangularRoom(x, y, room_width, room_height)
@@ -67,10 +69,15 @@ class SimpleMapBuilder(MapBuilder):
                 player.place(*new_room.center, dungeon)
             else:  # All rooms after the first.
                 # Dig out a tunnel between this room and the previous one.
-                for x, y in tunnel_between(rooms[-1].center, new_room.center):
+                for x, y in tunnel_between(rooms[-1].center, new_room.center, dungeon):
                     dungeon.tiles[x, y] = tile_types.floor
 
-            place_entities(new_room, dungeon, self.max_monsters_room)
+            place_entities(
+                new_room.cells,
+                dungeon,
+                self.max_monsters_room,
+                self.max_items_room,
+            )
 
             # Finally, append the new room to the list.
             rooms.append(new_room)

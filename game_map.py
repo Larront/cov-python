@@ -53,6 +53,8 @@ class GameWorld:
             CellularMapBuilder,
             EvilCellularMapBuilder,
             SimpleMapBuilder,
+            DrunkenMapBuilder,
+            MazeMapBuilder,
         )
 
         self.current_floor += 1
@@ -62,9 +64,12 @@ class GameWorld:
             BSPInteriorMapBuilder,
             CellularMapBuilder,
             EvilCellularMapBuilder,
+            SimpleMapBuilder,
+            DrunkenMapBuilder,
+            MazeMapBuilder,
         )
         choice = self.engine.rng.choice(builders)
-        builder = choice(
+        builder = MazeMapBuilder(
             max_rooms=self.max_rooms,
             room_min_size=self.room_min_size,
             room_max_size=self.room_max_size,
