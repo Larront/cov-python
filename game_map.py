@@ -55,6 +55,7 @@ class GameWorld:
             SimpleMapBuilder,
             DrunkenMapBuilder,
             MazeMapBuilder,
+            DLAMapBuilder,
         )
 
         self.current_floor += 1
@@ -67,9 +68,10 @@ class GameWorld:
             SimpleMapBuilder,
             DrunkenMapBuilder,
             MazeMapBuilder,
+            DLAMapBuilder,
         )
         choice = self.engine.rng.choice(builders)
-        builder = MazeMapBuilder(
+        builder = DLAMapBuilder(
             max_rooms=self.max_rooms,
             room_min_size=self.room_min_size,
             room_max_size=self.room_max_size,

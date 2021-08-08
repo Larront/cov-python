@@ -14,13 +14,20 @@ import tile_types
 from engine import Engine
 
 
-class Generation(Enum):
-    OPEN_AREA = 1
-    OPEN_HALLS = 2
-    WINDING_PASSAGES = 3
+class Algorithm(Enum):
+    WALK_INWARDS = 1
+    WALK_OUTWARDS = 2
+    CENTRAL_ATTRACTOR = 3
 
 
-class DrunkenMapBuilder(MapBuilder):
+class Symmetry(Enum):
+    NONE = 0
+    HORIZONTAL = 1
+    VERTICAL = 2
+    BOTH = 3
+
+
+class DLAMapBuilder(MapBuilder):
     def __init__(
         self,
         max_rooms: int,
@@ -44,19 +51,9 @@ class DrunkenMapBuilder(MapBuilder):
         )
 
     def build(self) -> GameMap:
-        generation = self.engine.rng.choice(Generation)
-        if generation == Generation.OPEN_AREA:
-            self.spawn_mode = "Start"
-            self.drunk_life = 400
-            self.floor_percent = 0.5
-        elif generation == Generation.OPEN_HALLS:
-            self.spawn_mode = "Random"
-            self.drunk_life = 400
-            self.floor_percent = 0.5
-        elif generation == Generation.WINDING_PASSAGES:
-            self.spawn_mode = "Random"
-            self.drunk_life = 100
-            self.floor_percent = 0.4
+        self.algorithm = self.engine.rng.choice(Algorithm)
+        self.algorithm = Algorithm.WALK_INWARDS
+        self.floor_percent = 0.25
         dungeon = self.build_map()
 
         return dungeon
@@ -71,10 +68,14 @@ class DrunkenMapBuilder(MapBuilder):
         player.place(int(self.map_width / 2), int(self.map_height / 2), dungeon)
 
         start_pos = (int(self.map_width / 2), int(self.map_height / 2))
+        dungeon.tiles[start_pos[0], start_pos[1]] = tile_types.floor
+        dungeon.tiles[start_pos[0] - 1, start_pos[1]] = tile_types.floor
+        dungeon.tiles[start_pos[0] + 1, start_pos[1]] = tile_types.floor
+        dungeon.tiles[start_pos[0], start_pos[1] - 1] = tile_types.floor
+        dungeon.tiles[start_pos[0], start_pos[1] + 1] = tile_types.floor
 
         total_tiles = self.map_width * self.map_height
         desired_tiles = int(total_tiles * self.floor_percent)
-        digger_count = 0
 
         floor_number = len(
             [
@@ -86,43 +87,34 @@ class DrunkenMapBuilder(MapBuilder):
         )
 
         while floor_number < desired_tiles:
-            if self.spawn_mode == "Random":
-                if digger_count == 0:
-                    drunk_x = start_pos[0]
-                    drunk_y = start_pos[1]
-                else:
-                    drunk_x = self.engine.rng.integers(1, self.map_width - 1)
-                    drunk_y = self.engine.rng.integers(1, self.map_height - 1)
-            else:
-                drunk_x = start_pos[0]
-                drunk_y = start_pos[1]
+            if self.algorithm == Algorithm.WALK_INWARDS:
+                digger_x = self.engine.rng.integers(1, self.map_width - 3) + 1
+                digger_y = self.engine.rng.integers(1, self.map_height - 3) + 1
+                prev_x = digger_x
+                prev_y = digger_y
 
-            drunk_life = 400
+                while dungeon.tiles[digger_x, digger_y] == tile_types.wall:
+                    prev_x = digger_x
+                    prev_y = digger_y
+                    stagger_dir = self.engine.rng.integers(0, 4)
+                    if stagger_dir == 0 and digger_x > 1:
+                        digger_x -= 1
+                    elif stagger_dir == 1 and digger_x < self.map_width - 2:
+                        digger_x += 1
+                    elif stagger_dir == 2 and digger_y > 1:
+                        digger_y -= 1
+                    elif stagger_dir == 3 and digger_y < self.map_height - 2:
+                        digger_y += 1
+                self.paint(dungeon, prev_x, prev_y)
 
-            while drunk_life > 0:
-                dungeon.tiles[drunk_x, drunk_y] = tile_types.floor
-
-                stagger_direction = self.engine.rng.integers(0, 4)
-                if stagger_direction == 0 and drunk_x > 1:
-                    drunk_x -= 1
-                elif stagger_direction == 1 and drunk_x < self.map_width - 2:
-                    drunk_x += 1
-                elif stagger_direction == 2 and drunk_y > 1:
-                    drunk_y -= 1
-                elif stagger_direction == 3 and drunk_y < self.map_height - 2:
-                    drunk_y += 1
-
-                drunk_life -= 1
-
-            digger_count += 1
-            floor_number = len(
-                [
-                    (x, y)
-                    for x in range(0, self.map_width - 1)
-                    for y in range(0, self.map_height - 1)
-                    if dungeon.tiles[x, y] == tile_types.floor
-                ]
-            )
+                floor_number = len(
+                    [
+                        (x, y)
+                        for x in range(0, self.map_width - 1)
+                        for y in range(0, self.map_height - 1)
+                        if dungeon.tiles[x, y] == tile_types.floor
+                    ]
+                )
 
         dijk_map = generate_dijkstra_map(dungeon, (player.x, player.y))
         exit_tile = exit_from_dijk(dungeon, dijk_map, cull_unreachable=True)
@@ -142,3 +134,6 @@ class DrunkenMapBuilder(MapBuilder):
                 )
 
         return dungeon
+
+    def paint(self, dungeon: GameMap, x: int, y: int):
+        dungeon.tiles[x, y] = tile_types.floor

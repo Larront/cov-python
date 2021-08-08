@@ -6,3 +6,4 @@ from .evil_cellular_map import EvilCellularMapBuilder
 from .cellular_map import CellularMapBuilder
 from .drunken_map import DrunkenMapBuilder
 from .maze_map import MazeMapBuilder
+from .dla_map import DLAMapBuilder

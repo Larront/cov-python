@@ -62,6 +62,7 @@ class CellularMapBuilder(MapBuilder):
                         new_tiles[x, y] = tile_types.wall
                     else:
                         new_tiles[x, y] = tile_types.floor
+
             dungeon.tiles = new_tiles.copy()
 
         for y in range(0, self.map_height):
