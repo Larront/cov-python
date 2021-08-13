@@ -19,8 +19,6 @@ class BSPMapBuilder(MapBuilder):
         room_max_size: int,
         map_width: int,
         map_height: int,
-        max_monsters_room: int,
-        max_items_room: int,
         engine: Engine,
     ):
         super().__init__(
@@ -29,9 +27,6 @@ class BSPMapBuilder(MapBuilder):
             room_max_size,
             map_width,
             map_height,
-            max_monsters_room,
-            max_items_room,
-            engine,
         )
 
     def build(self) -> GameMap:
@@ -68,7 +63,7 @@ class BSPMapBuilder(MapBuilder):
                 dungeon.tiles[room.inner] = tile_types.floor
 
                 place_entities(
-                    room.cells, dungeon, self.max_monsters_room, self.max_items_room
+                    room.cells, dungeon, self.engine.game_world.current_floor
                 )
 
         player.place(*rooms[0].center, dungeon)

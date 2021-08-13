@@ -1,12 +1,22 @@
 from __future__ import annotations
-from typing import Iterator, Tuple
+from typing import Iterator, TYPE_CHECKING, Tuple, List, Dict
 import tcod
 from scipy import spatial
 import numpy as np
 
 import entity_factories
+import random
 from game_map import GameMap
+from spawn_table import (
+    max_items_by_floor,
+    max_monsters_by_floor,
+    enemy_chances,
+    item_chances,
+)
 import tile_types
+
+if TYPE_CHECKING:
+    from entity import Entity
 
 
 class RectangularRoom:
@@ -142,31 +152,72 @@ def exit_from_dijk(dungeon: GameMap, dijk_map, cull_unreachable=False):
 
 
 def place_entities(
-    room, dungeon: GameMap, maximum_monsters: int, maximum_items: int
+    cells,
+    dungeon: GameMap,
+    floor_number: int,
 ) -> None:
-    number_monsters = dungeon.engine.rng.integers(0, maximum_monsters)
-    number_of_items = dungeon.engine.rng.integers(0, maximum_items)
 
-    for _i in range(number_monsters):
-        x, y = dungeon.engine.rng.choice(room)
+    number_of_monsters = dungeon.engine.rng.integers(
+        0, get_max_value_for_floor(max_monsters_by_floor, floor_number), endpoint=True
+    )
+    number_of_items = dungeon.engine.rng.integers(
+        0, get_max_value_for_floor(max_items_by_floor, floor_number), endpoint=True
+    )
+
+    monsters: List[Entity] = get_entities_at_random(
+        enemy_chances, number_of_monsters, dungeon, floor_number
+    )
+    items: List[Entity] = get_entities_at_random(
+        item_chances, number_of_items, dungeon, floor_number
+    )
+
+    for entity in monsters + items:
+        x, y = dungeon.engine.rng.choice(cells)
 
         if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
-            if dungeon.engine.rng.random() < 0.8:
-                entity_factories.goblin.spawn(dungeon, x, y)
-            else:
-                entity_factories.orc.spawn(dungeon, x, y)
+            entity.spawn(dungeon, x, y)
 
-    for _i in range(number_of_items):
-        x, y = dungeon.engine.rng.choice(room)
 
-        if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
-            item_chance = dungeon.engine.rng.random()
+def get_max_value_for_floor(
+    max_value_by_floor: List[Tuple[int, int]], floor: int
+) -> int:
+    current_value = 0
 
-            if item_chance < 0.7:
-                entity_factories.health_potion.spawn(dungeon, x, y)
-            elif item_chance < 0.8:
-                entity_factories.fireball_scroll.spawn(dungeon, x, y)
-            elif item_chance < 0.9:
-                entity_factories.confusion_scroll.spawn(dungeon, x, y)
-            else:
-                entity_factories.lightning_scroll.spawn(dungeon, x, y)
+    for floor_minimum, value in max_value_by_floor:
+        if floor_minimum > floor:
+            break
+        else:
+            current_value = value
+
+    return current_value
+
+
+def get_entities_at_random(
+    weighted_chances_by_floor: Dict[int, List[Tuple[Entity, int]]],
+    number_of_entities: int,
+    dungeon: GameMap,
+    floor: int,
+) -> List[Entity]:
+    entity_weighted_chances = {}
+
+    for key, values in weighted_chances_by_floor.items():
+        if key > floor:
+            break
+        else:
+            for value in values:
+                entity = value[0]
+                weighted_chance = value[1]
+
+                entity_weighted_chances[entity] = weighted_chance
+
+    entities = list(entity_weighted_chances.keys())
+    entity_weighted_chance_values = list(entity_weighted_chances.values())
+    normalized_weights = entity_weighted_chance_values / np.linalg.norm(
+        entity_weighted_chance_values
+    )
+
+    chosen_entities = dungeon.engine.rng.choice(
+        entities, p=normalized_weights, size=number_of_entities
+    )
+
+    return chosen_entities.tolist()

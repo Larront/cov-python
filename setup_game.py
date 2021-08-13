@@ -25,9 +25,6 @@ def new_game() -> Engine:
     map_width = 80
     map_height = 43
 
-    max_monsters_room = 2
-    max_items_room = 2
-
     player = copy.deepcopy(entity_factories.player)
     engine = Engine(player=player)
 
@@ -37,8 +34,6 @@ def new_game() -> Engine:
         room_max_size=10,
         map_width=map_width,
         map_height=map_height,
-        max_monsters_room=max_monsters_room,
-        max_items_room=max_items_room,
         engine=engine,
     )
 

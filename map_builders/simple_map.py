@@ -18,8 +18,6 @@ class SimpleMapBuilder(MapBuilder):
         room_max_size: int,
         map_width: int,
         map_height: int,
-        max_monsters_room: int,
-        max_items_room: int,
         engine: Engine,
     ):
         super().__init__(
@@ -28,8 +26,6 @@ class SimpleMapBuilder(MapBuilder):
             room_max_size,
             map_width,
             map_height,
-            max_monsters_room,
-            max_items_room,
             engine,
         )
 
@@ -73,10 +69,7 @@ class SimpleMapBuilder(MapBuilder):
                     dungeon.tiles[x, y] = tile_types.floor
 
             place_entities(
-                new_room.cells,
-                dungeon,
-                self.max_monsters_room,
-                self.max_items_room,
+                new_room.cells, dungeon, self.engine.game_world.current_floor
             )
 
             # Finally, append the new room to the list.

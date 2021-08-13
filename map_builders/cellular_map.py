@@ -1,5 +1,6 @@
 import tcod
 import numpy as np
+from scipy.signal import convolve2d
 
 from map_builders.map_builder import MapBuilder
 from map_builders.common import (
@@ -23,8 +24,6 @@ class CellularMapBuilder(MapBuilder):
         room_max_size: int,
         map_width: int,
         map_height: int,
-        max_monsters_room: int,
-        max_items_room: int,
         engine: Engine,
     ):
         super().__init__(
@@ -33,8 +32,6 @@ class CellularMapBuilder(MapBuilder):
             room_max_size,
             map_width,
             map_height,
-            max_monsters_room,
-            max_items_room,
             engine,
         )
 
@@ -45,30 +42,23 @@ class CellularMapBuilder(MapBuilder):
             self.engine, self.map_width, self.map_height, entities=[player]
         )
 
-        dungeon.tiles = self.engine.rng.choice(
-            [tile_types.wall, tile_types.floor],
-            size=(self.map_width, self.map_height),
-            p=[0.55, 0.45],
+        is_wall = (
+            self.engine.rng.random(
+                size=(self.map_width, self.map_height), dtype=np.float32
+            )
+            > 0.55
         )
 
-        for i in range(0, 10):
-            new_tiles = dungeon.tiles.copy()
+        for _ in range(0, 10):
+            neighbors = convolve2d(is_wall, [[1, 1, 1], [1, 0, 1], [1, 1, 1]], "same")
+            is_wall = (neighbors > 4) | (neighbors == 0)
 
-            for y in range(1, self.map_height - 1):
-                for x in range(1, self.map_width - 1):
-                    neighbors = self.getAdjacentWalls(x, y, dungeon)
+        is_wall[0, :] = True
+        is_wall[-1, :] = True
+        is_wall[:, 0] = True
+        is_wall[:, -1] = True
 
-                    if neighbors > 4 or neighbors == 0:
-                        new_tiles[x, y] = tile_types.wall
-                    else:
-                        new_tiles[x, y] = tile_types.floor
-
-            dungeon.tiles = new_tiles.copy()
-
-        for y in range(0, self.map_height):
-            for x in range(0, self.map_width):
-                if x < 1 or x > self.map_width - 2 or y < 1 or y > self.map_height - 2:
-                    dungeon.tiles[x, y] = tile_types.wall
+        dungeon.tiles[:] = np.where(is_wall, tile_types.wall, tile_types.floor)
 
         player.place(int(self.map_width / 2), int(self.map_height / 2), dungeon)
         while dungeon.tiles[player.x, player.y] == tile_types.wall:
@@ -83,11 +73,6 @@ class CellularMapBuilder(MapBuilder):
 
         for region in regions:
             if len(region) > 0:
-                place_entities(
-                    region,
-                    dungeon,
-                    self.max_monsters_room + 3,
-                    self.max_items_room,
-                )
+                place_entities(region, dungeon, self.engine.game_world.current_floor)
 
         return dungeon

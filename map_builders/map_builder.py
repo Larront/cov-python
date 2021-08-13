@@ -12,8 +12,6 @@ class MapBuilder:
         room_max_size: int,
         map_width: int,
         map_height: int,
-        max_monsters_room: int,
-        max_items_room: int,
         engine: Engine,
     ):
         self.max_rooms = max_rooms
@@ -21,8 +19,6 @@ class MapBuilder:
         self.room_max_size = room_max_size
         self.map_width = map_width
         self.map_height = map_height
-        self.max_monsters_room = max_monsters_room
-        self.max_items_room = max_items_room
         self.engine = engine
 
     def build(self) -> GameMap:

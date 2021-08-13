@@ -35,8 +35,6 @@ class DLAMapBuilder(MapBuilder):
         room_max_size: int,
         map_width: int,
         map_height: int,
-        max_monsters_room: int,
-        max_items_room: int,
         engine: Engine,
     ):
         super().__init__(
@@ -45,8 +43,6 @@ class DLAMapBuilder(MapBuilder):
             room_max_size,
             map_width,
             map_height,
-            max_monsters_room,
-            max_items_room,
             engine,
         )
 
@@ -126,12 +122,7 @@ class DLAMapBuilder(MapBuilder):
 
         for region in regions:
             if len(region) > 0:
-                place_entities(
-                    region,
-                    dungeon,
-                    self.max_monsters_room + 3,
-                    self.max_items_room,
-                )
+                place_entities(region, dungeon, self.engine.game_world.current_floor)
 
         return dungeon
 

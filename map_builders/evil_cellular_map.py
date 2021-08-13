@@ -22,8 +22,6 @@ class EvilCellularMapBuilder(MapBuilder):
         room_max_size: int,
         map_width: int,
         map_height: int,
-        max_monsters_room: int,
-        max_items_room: int,
         engine: Engine,
     ):
         super().__init__(
@@ -32,8 +30,6 @@ class EvilCellularMapBuilder(MapBuilder):
             room_max_size,
             map_width,
             map_height,
-            max_monsters_room,
-            max_items_room,
             engine,
         )
 
@@ -96,12 +92,7 @@ class EvilCellularMapBuilder(MapBuilder):
             if dungeon.tiles[x, y] == tile_types.floor
         ]
 
-        place_entities(
-            cells,
-            dungeon,
-            self.max_monsters_room * 25,
-            self.max_items_room * 25,
-        )
+        place_entities(cells, dungeon, self.engine.game_world.current_floor)
 
         player.place(int(r[0]), int(c[0]), dungeon)
 
