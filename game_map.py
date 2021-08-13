@@ -65,8 +65,8 @@ class GameWorld:
             MazeMapBuilder,
             DLAMapBuilder,
         )
-        choice = self.engine.rng.choice(builders)
-        builder = CellularMapBuilder(
+        generator = self.engine.rng.choice(builders)
+        builder = generator(
             max_rooms=self.max_rooms,
             room_min_size=self.room_min_size,
             room_max_size=self.room_max_size,

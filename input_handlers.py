@@ -573,8 +573,9 @@ class InventoryEventHandler(AskUserEventHandler):
                 if is_equipped:
                     item_string = f"{item_string} (E)"
 
-                console.print(x + 1, y + i + 1, item_string)        else:
-            console.print(x + 1, y + 1, "(Empty)")
+                    console.print(x + 1, y + i + 1, item_string)
+                else:
+                    console.print(x + 1, y + 1, "(Empty)")
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         player = self.engine.player
@@ -609,6 +610,7 @@ class InventoryActivateHandler(InventoryEventHandler):
             return actions.EquipAction(self.engine.player, item)
         else:
             return None
+
 
 class InventoryDropHandler(InventoryEventHandler):
     """Handle dropping an inventory item."""
