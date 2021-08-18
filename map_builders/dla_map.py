@@ -1,4 +1,5 @@
 from enum import Enum
+import numpy as np
 
 from map_builders.map_builder import MapBuilder
 from map_builders.common import (
@@ -60,57 +61,17 @@ class DLAMapBuilder(MapBuilder):
         dungeon = GameMap(
             self.engine, self.map_width, self.map_height, entities=[player]
         )
-
-        player.place(int(self.map_width / 2), int(self.map_height / 2), dungeon)
-
         start_pos = (int(self.map_width / 2), int(self.map_height / 2))
-        dungeon.tiles[start_pos[0], start_pos[1]] = tile_types.floor
-        dungeon.tiles[start_pos[0] - 1, start_pos[1]] = tile_types.floor
-        dungeon.tiles[start_pos[0] + 1, start_pos[1]] = tile_types.floor
-        dungeon.tiles[start_pos[0], start_pos[1] - 1] = tile_types.floor
-        dungeon.tiles[start_pos[0], start_pos[1] + 1] = tile_types.floor
+        player.place(int(self.map_width / 2), int(self.map_height / 2), dungeon)
+        dungeon.tiles[start_pos] = tile_types.floor
 
         total_tiles = self.map_width * self.map_height
         desired_tiles = int(total_tiles * self.floor_percent)
 
-        floor_number = len(
-            [
-                (x, y)
-                for x in range(0, self.map_width - 1)
-                for y in range(0, self.map_height - 1)
-                if dungeon.tiles[x, y] == tile_types.floor
-            ]
-        )
+        dla = DLA(self.map_width, self.map_height, 1)
+        dla.addPoint(desired_tiles)
 
-        while floor_number < desired_tiles:
-            if self.algorithm == Algorithm.WALK_INWARDS:
-                digger_x = self.engine.rng.integers(1, self.map_width - 3) + 1
-                digger_y = self.engine.rng.integers(1, self.map_height - 3) + 1
-                prev_x = digger_x
-                prev_y = digger_y
-
-                while dungeon.tiles[digger_x, digger_y] == tile_types.wall:
-                    prev_x = digger_x
-                    prev_y = digger_y
-                    stagger_dir = self.engine.rng.integers(0, 4)
-                    if stagger_dir == 0 and digger_x > 1:
-                        digger_x -= 1
-                    elif stagger_dir == 1 and digger_x < self.map_width - 2:
-                        digger_x += 1
-                    elif stagger_dir == 2 and digger_y > 1:
-                        digger_y -= 1
-                    elif stagger_dir == 3 and digger_y < self.map_height - 2:
-                        digger_y += 1
-                self.paint(dungeon, prev_x, prev_y)
-
-                floor_number = len(
-                    [
-                        (x, y)
-                        for x in range(0, self.map_width - 1)
-                        for y in range(0, self.map_height - 1)
-                        if dungeon.tiles[x, y] == tile_types.floor
-                    ]
-                )
+        dungeon.tiles = np.where(dla.state, tile_types.floor, tile_types.wall)
 
         dijk_map = generate_dijkstra_map(dungeon, (player.x, player.y))
         exit_tile = exit_from_dijk(dungeon, dijk_map, cull_unreachable=True)
@@ -126,5 +87,250 @@ class DLAMapBuilder(MapBuilder):
 
         return dungeon
 
-    def paint(self, dungeon: GameMap, x: int, y: int):
-        dungeon.tiles[x, y] = tile_types.floor
+
+class DLA:
+    def __init__(self, width, height, k):
+        self.width = width
+        self.height = height
+        self.state = np.zeros((width, height), dtype=int)
+        self.state[width // 2, height // 2] = 1
+
+        self.xBounds = (width // 2, width // 2)
+        self.yBounds = (height // 2, height // 2)
+
+        self.radius = 0
+        self.xcenter = int(width // 2)
+        self.ycenter = int(height // 2)
+
+        self.k = k
+
+    def getSeed(self):
+        """
+        Returns a randomly sampled initial position
+        for a particle.
+        Returns (x, y) tuple
+        """
+
+        boundingCircle = self.getBoundingCircle()
+        p = np.random.randint(len(boundingCircle))
+
+        return boundingCircle[p]
+
+    def isValid(self, curr):
+        """
+        Checks wether (x, y) is in grid
+        Returns True/False
+        """
+        x, y = curr
+        return x > -1 and x < self.width and y > -1 and y < self.height
+
+    def getAdjacentPoints(self, curr):
+        """
+        Returns points adjacent to curr within image bounds
+        Assumption : Adjacent includes diagonal neighbors (max 8)
+                        A|A|A
+                        A|X|A
+                        A|A|A
+
+        Input args:
+            curr : (x, y) tuple
+        Returns:
+            List of adjacent points
+        """
+
+        x, y = curr
+        adjacentPoints = [
+            (x - 1, y - 1),
+            (x - 1, y),
+            (x - 1, y + 1),
+            (x, y - 1),
+            (x, y + 1),
+            (x + 1, y - 1),
+            (x + 1, y),
+            (x + 1, y + 1),
+        ]
+
+        # Remove points outside the image
+        adjacentPoints = filter(
+            lambda x: x[0] > -1
+            and x[0] < self.width
+            and x[1] > -1
+            and x[1] < self.height,
+            adjacentPoints,
+        )
+        return adjacentPoints
+
+    def getBoundingCircle(self):
+        """
+        Gets bounding circle of current image
+        Returns list of points in bounding circle
+        """
+
+        points = {}
+
+        y1, y2 = self.ycenter, self.ycenter
+
+        for x in range(self.xcenter - self.radius - 10, self.xcenter + 1):
+            while (y1 - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius
+            ) ** 2:
+                y1 -= 1
+            k = y1
+            while (k - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius + 1
+            ) ** 2:
+                if self.isValid((x, k)):
+                    points[(x, k)] = True
+                k -= 1
+
+            while (y2 - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius
+            ) ** 2:
+                y2 += 1
+            k = y2
+            while (k - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius + 1
+            ) ** 2:
+                if self.isValid((x, k)):
+                    points[(x, k)] = True
+                k += 1
+
+        y1, y2 = self.ycenter, self.ycenter
+        for x in range(self.xcenter + self.radius + 10, self.xcenter, -1):
+            while (y1 - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius
+            ) ** 2:
+                y1 -= 1
+            k = y1
+            while (k - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius + 1
+            ) ** 2:
+                if self.isValid((x, k)):
+                    points[(x, k)] = True
+                k -= 1
+
+            while (y2 - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius
+            ) ** 2:
+                y2 += 1
+            k = y2
+            while (k - self.ycenter) ** 2 + (x - self.xcenter) ** 2 <= (
+                self.radius + 1
+            ) ** 2:
+                if self.isValid((x, k)):
+                    points[(x, k)] = True
+                k += 1
+
+        if any(map(lambda x: self.state[x] == 1, points.keys())):
+            print("can spawn at marked")
+
+        return list(points.keys())
+
+    def checkIfTerminate(self, curr):
+        """
+        Check if curr sticks in image.
+        Will happen with prob k if any adjacent block is 1
+
+        Input args:
+            curr : (x, y) tuple
+        Returns True/False
+        """
+        adjacentPoints = self.getAdjacentPoints(curr)
+        return (
+            any(map(lambda x: self.state[x] == 1, adjacentPoints))
+            and np.random.rand() < self.k
+        )
+
+    def getNextPosition(self, curr):
+        """
+        Get next point. Brownian motion is order 1 markov process
+
+        Input args:
+            curr : (x, y) tuple
+        Returns:
+            (x, y) coordinate of next position
+        """
+
+        adjacentPoints = self.getAdjacentPoints(curr)  # List of adjacent points
+        adjacentPoints = list(filter(lambda x: self.state[x] == 0, adjacentPoints))
+        s = np.random.randint(len(adjacentPoints))  # Get random point
+        return adjacentPoints[s]
+
+    def getSurfaceArea(self):
+        """
+        Get surface area of all points.
+        Presently O(m**2), can be done better
+        Returns integer
+        """
+
+        area = 0
+        for i in range(self.width):
+            for j in range(self.height):
+                if self.state[i, j] == 1:
+                    adj = self.getAdjacentPoints((i, j))
+                    adj = list(filter(lambda x: self.state[x] == 0, adj))
+                    area += len(adj)
+
+        return area
+
+    def getNeighbourCount(self):
+        """
+        For each cell with 1, count neghbouring cells with 1
+        Returns integer
+        """
+
+        count = 0
+        for i in range(self.width):
+            for j in range(self.height):
+                if self.state[i, j] == 1:
+                    adj = self.getAdjacentPoints((i, j))
+                    adj = list(filter(lambda x: self.state[x] == 1, adj))
+                    count += len(adj)
+
+        return count
+
+    def addPoint(self, desired_tiles=1):
+        """
+        Adds a new particle to the matrix
+        """
+
+        floor_number = np.count_nonzero(self.state)
+
+        while floor_number < desired_tiles:
+
+            if (floor_number + 1) % 100 == 0:
+                print(f"{floor_number}/{desired_tiles}")
+
+            curr = self.getSeed()  # Get initial position
+
+            while not self.checkIfTerminate(curr):
+                curr = self.getNextPosition(curr)
+                if (curr[0] - self.xcenter) ** 2 + (curr[1] - self.ycenter) ** 2 > (
+                    self.radius + 15
+                ) ** 2:
+                    curr = self.getSeed()  # Go back to random point in bounding circle
+
+            self.state[curr] = 1
+
+            # Update bounds
+            x, y = curr
+
+            xmin, xmax = self.xBounds
+            xmin = min(xmin, x)
+            xmax = max(xmax, x)
+            self.xBounds = (xmin, xmax)
+
+            ymin, ymax = self.yBounds
+            ymin = min(ymin, y)
+            ymax = max(ymax, y)
+            self.yBounds = (ymin, ymax)
+
+            # Calculate new radius
+            self.xcenter = int((xmax + xmin) / 2)
+            self.ycenter = int((ymax + ymin) / 2)
+            self.radius = (
+                int(((xmax - self.xcenter) ** 2 + (ymax - self.ycenter) ** 2) ** 0.5)
+                + 1
+            )
+
+            floor_number = np.count_nonzero(self.state)

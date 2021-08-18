@@ -22,11 +22,7 @@ class BSPMapBuilder(MapBuilder):
         engine: Engine,
     ):
         super().__init__(
-            max_rooms,
-            room_min_size,
-            room_max_size,
-            map_width,
-            map_height,
+            max_rooms, room_min_size, room_max_size, map_width, map_height, engine
         )
 
     def build(self) -> GameMap:

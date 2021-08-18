@@ -75,14 +75,14 @@ class MainMenu(input_handlers.BaseEventHandler):
         console.draw_semigraphics(background_image, 0, 0)
 
         console.print(
-            console.width // 2,
+            console.width // 4,
             console.height // 2 - 4,
             "Crown of Vorona",
             fg=color.menu_title,
             alignment=tcod.CENTER,
         )
         console.print(
-            console.width // 2,
+            console.width // 4,
             console.height - 2,
             "By Larront",
             fg=color.menu_title,
@@ -94,7 +94,7 @@ class MainMenu(input_handlers.BaseEventHandler):
             ["[N] Play a new game", "[C] Continue last game", "[Q] Quit"]
         ):
             console.print(
-                console.width // 2,
+                console.width // 4,
                 console.height // 2 - 2 + i,
                 text.ljust(menu_width),
                 fg=color.menu_text,

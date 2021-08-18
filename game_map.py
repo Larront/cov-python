@@ -63,7 +63,6 @@ class GameWorld:
             SimpleMapBuilder,
             DrunkenMapBuilder,
             MazeMapBuilder,
-            DLAMapBuilder,
         )
         generator = self.engine.rng.choice(builders)
         builder = generator(
